@@ -152,6 +152,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose }) => {
   const handleSend = async () => {
     if (!input.trim()) return;
 
+    const userMessage = input.trim();
     const data = generateRandomData();
     
     try {
@@ -163,18 +164,19 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose }) => {
         body: JSON.stringify({
           history: data.history,
           forecast: data.forecast,
+          context: userMessage // 添加用户输入的内容作为context
         }),
       });
 
       const result = await response.json();
-      setMessages(prev => [...prev, input, result.result]);
+      setMessages(prev => [...prev, userMessage, result.result]);
       setInput('');
     } catch (error) {
       // 模拟API响应
       const mockResponse = {
         result: "这里是模拟回复这里是模拟回复这里是模拟回复这里是模拟回复这里是模拟回复这里是模拟回复"
       };
-      setMessages(prev => [...prev, input, mockResponse.result]);
+      setMessages(prev => [...prev, userMessage, mockResponse.result]);
       setInput('');
     }
   };
