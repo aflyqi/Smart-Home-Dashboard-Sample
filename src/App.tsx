@@ -5,6 +5,7 @@ import EnvironmentCard from './components/EnvironmentCard/EnvironmentCard';
 import EnergyChart from './components/EnergyChart/EnergyChart';
 import GlobalStyles from './styles/GlobalStyles';
 import { DeviceType, EnvironmentData, TimeSeriesData } from './types';
+import ChatBot from './components/ChatBot/ChatBot';
 
 const initialDevices: DeviceType[] = [
   {
@@ -51,6 +52,7 @@ function App() {
     history: TimeSeriesData[];
     forecast: TimeSeriesData[];
   }>({ history: [], forecast: [] });
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   // 计算当前开启设备的总能耗
   const calculateTotalPowerUsage = useCallback((deviceList: DeviceType[]): number => {
@@ -112,7 +114,7 @@ function App() {
   return (
     <>
       <GlobalStyles />
-      <Dashboard>
+      <Dashboard onChatToggle={setIsChatOpen}>
         {devices.map(device => (
           <DeviceCard
             key={device.id}
@@ -126,6 +128,11 @@ function App() {
           onDataUpdate={handleEnergyDataUpdate}
         />
       </Dashboard>
+      <ChatBot 
+        isOpen={isChatOpen} 
+        onClose={() => setIsChatOpen(false)}
+        energyData={energyData}
+      />
     </>
   );
 }

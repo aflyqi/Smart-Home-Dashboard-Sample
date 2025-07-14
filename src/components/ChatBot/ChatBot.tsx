@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { IconButton, TextField } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SendIcon from '@mui/icons-material/Send';
-import { TimeSeriesData, HistoryResponse, ForecastResponse } from '../../types';
+import { TimeSeriesData } from '../../types';
 
 const Drawer = styled(motion.div)`
   position: fixed;
@@ -138,56 +138,15 @@ const SendButton = styled(IconButton)`
 interface ChatBotProps {
   isOpen: boolean;
   onClose: () => void;
+  energyData: {
+    history: TimeSeriesData[];
+    forecast: TimeSeriesData[];
+  };
 }
 
-const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose }) => {
+const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose, energyData }) => {
   const [messages, setMessages] = useState<string[]>([]);
   const [input, setInput] = useState('');
-  const [currentData, setCurrentData] = useState<{ history: TimeSeriesData[], forecast: TimeSeriesData[] }>({
-    history: [],
-    forecast: []
-  });
-
-  const fetchData = async () => {
-    try {
-      // 获取历史数据
-      const historyResponse = await fetch('http://127.0.0.1:8000/history');
-      const historyData: HistoryResponse = await historyResponse.json();
-
-      // 获取预测数据
-      const forecastResponse = await fetch('http://127.0.0.1:8000/predict', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ history: historyData.history }),
-      });
-      const forecastData: ForecastResponse = await forecastResponse.json();
-
-      setCurrentData({
-        history: forecastData.history,
-        forecast: forecastData.forecast,
-      });
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      // 使用模拟数据
-      const mockHistory: TimeSeriesData[] = Array.from({ length: 7 }, (_, i) => ({
-        value: 9 + Math.random() * 2,
-        timestamp: new Date(Date.now() - (6 - i) * 3600000).toISOString(),
-      }));
-      const mockForecast: TimeSeriesData[] = Array.from({ length: 3 }, (_, i) => ({
-        value: 9 + Math.random() * 2,
-        timestamp: new Date(Date.now() + (i + 1) * 3600000).toISOString(),
-      }));
-      setCurrentData({ history: mockHistory, forecast: mockForecast });
-    }
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      fetchData();
-    }
-  }, [isOpen]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -201,8 +160,8 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          history: currentData.history,
-          forecast: currentData.forecast,
+          history: energyData.history,
+          forecast: energyData.forecast,
           context: userMessage
         }),
       });
@@ -213,7 +172,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose }) => {
     } catch (error) {
       // 模拟API响应
       const mockResponse = {
-        result: "这里是模拟回复这里是模拟回复这里是模拟回复这里是模拟回复这里是模拟回复这里是模拟回复"
+        result: "I understand your question. Based on the current energy data, I can help you analyze the usage patterns and provide recommendations."
       };
       setMessages(prev => [...prev, userMessage, mockResponse.result]);
       setInput('');
@@ -237,7 +196,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose }) => {
           transition={{ type: 'spring', damping: 20 }}
         >
           <Header>
-            <Title>智能助手</Title>
+            <Title>Smart Assistant</Title>
             <IconButton onClick={onClose} sx={{ color: 'white' }}>
               <CloseIcon />
             </IconButton>
@@ -268,7 +227,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose }) => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="输入消息..."
+              placeholder="Type your message..."
               variant="outlined"
             />
             <SendButton onClick={handleSend}>

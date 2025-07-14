@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { IconButton } from '@mui/material';
 import ChatIcon from '@mui/icons-material/Chat';
-import ChatBot from '../ChatBot/ChatBot';
 
 const DashboardContainer = styled.div`
   max-width: 1400px;
@@ -88,45 +87,41 @@ const Grid = styled.div`
 
 interface DashboardProps {
   children: React.ReactNode;
+  onChatToggle: (isOpen: boolean) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ children }) => {
+const Dashboard: React.FC<DashboardProps> = ({ children, onChatToggle }) => {
   const rooms = ['Living Room', 'Kitchen', 'Bedroom', 'Office'];
   const [activeRoom, setActiveRoom] = React.useState('Living Room');
-  const [isChatOpen, setIsChatOpen] = useState(false);
 
   return (
-    <>
-      <DashboardContainer>
-        <Header>
-          <h1>Smart Home</h1>
-          <HeaderRight>
-            <ChatButton onClick={() => setIsChatOpen(true)}>
-              <ChatIcon />
-            </ChatButton>
-          </HeaderRight>
-        </Header>
-        
-        <RoomTabs>
-          {rooms.map(room => (
-            <RoomTab
-              key={room}
-              active={activeRoom === room}
-              onClick={() => setActiveRoom(room)}
-              whileTap={{ scale: 0.95 }}
-            >
-              {room}
-            </RoomTab>
-          ))}
-        </RoomTabs>
-
-        <Grid>
-          {children}
-        </Grid>
-      </DashboardContainer>
+    <DashboardContainer>
+      <Header>
+        <h1>Smart Home</h1>
+        <HeaderRight>
+          <ChatButton onClick={() => onChatToggle(true)}>
+            <ChatIcon />
+          </ChatButton>
+        </HeaderRight>
+      </Header>
       
-      <ChatBot isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
-    </>
+      <RoomTabs>
+        {rooms.map(room => (
+          <RoomTab
+            key={room}
+            active={activeRoom === room}
+            onClick={() => setActiveRoom(room)}
+            whileTap={{ scale: 0.95 }}
+          >
+            {room}
+          </RoomTab>
+        ))}
+      </RoomTabs>
+
+      <Grid>
+        {children}
+      </Grid>
+    </DashboardContainer>
   );
 };
 
