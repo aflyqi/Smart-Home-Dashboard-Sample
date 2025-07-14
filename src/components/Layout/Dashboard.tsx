@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
+import { IconButton } from '@mui/material';
+import ChatIcon from '@mui/icons-material/Chat';
+import ChatBot from '../ChatBot/ChatBot';
 
 const DashboardContainer = styled.div`
   max-width: 1400px;
@@ -21,6 +24,32 @@ const Header = styled.header`
     font-weight: 600;
     color: #ffffff;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+`;
+
+const HeaderRight = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 15px;
+`;
+
+const ChatButton = styled(IconButton)`
+  &.MuiIconButton-root {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 12px;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+    
+    &:active {
+      transform: translateY(0);
+    }
   }
 `;
 
@@ -64,30 +93,40 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ children }) => {
   const rooms = ['Living Room', 'Kitchen', 'Bedroom', 'Office'];
   const [activeRoom, setActiveRoom] = React.useState('Living Room');
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   return (
-    <DashboardContainer>
-      <Header>
-        <h1>Smart Home</h1>
-      </Header>
-      
-      <RoomTabs>
-        {rooms.map(room => (
-          <RoomTab
-            key={room}
-            active={activeRoom === room}
-            onClick={() => setActiveRoom(room)}
-            whileTap={{ scale: 0.95 }}
-          >
-            {room}
-          </RoomTab>
-        ))}
-      </RoomTabs>
+    <>
+      <DashboardContainer>
+        <Header>
+          <h1>Smart Home</h1>
+          <HeaderRight>
+            <ChatButton onClick={() => setIsChatOpen(true)}>
+              <ChatIcon />
+            </ChatButton>
+          </HeaderRight>
+        </Header>
+        
+        <RoomTabs>
+          {rooms.map(room => (
+            <RoomTab
+              key={room}
+              active={activeRoom === room}
+              onClick={() => setActiveRoom(room)}
+              whileTap={{ scale: 0.95 }}
+            >
+              {room}
+            </RoomTab>
+          ))}
+        </RoomTabs>
 
-      <Grid>
-        {children}
-      </Grid>
-    </DashboardContainer>
+        <Grid>
+          {children}
+        </Grid>
+      </DashboardContainer>
+      
+      <ChatBot isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+    </>
   );
 };
 
