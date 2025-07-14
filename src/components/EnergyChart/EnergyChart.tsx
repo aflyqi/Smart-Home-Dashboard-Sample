@@ -13,7 +13,7 @@ import {
   Legend,
   Filler
 } from 'chart.js';
-import { EnergyUsageData, TimeSeriesData, HistoryResponse, ForecastResponse } from '../../types';
+import { TimeSeriesData, HistoryResponse, ForecastResponse } from '../../types';
 
 ChartJS.register(
   CategoryScale,
@@ -107,8 +107,18 @@ const formatTime = (timestamp: string) => {
   });
 };
 
-const EnergyChart: React.FC = () => {
-  const [data, setData] = useState<EnergyUsageData>({ history: [], forecast: [] });
+interface EnergyChartProps {
+  energyData: {
+    history: TimeSeriesData[];
+    forecast: TimeSeriesData[];
+  };
+  onDataUpdate: (data: {
+    history: TimeSeriesData[];
+    forecast: TimeSeriesData[];
+  }) => void;
+}
+
+const EnergyChart: React.FC<EnergyChartProps> = ({ energyData, onDataUpdate }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -137,7 +147,8 @@ const EnergyChart: React.FC = () => {
       }
       const forecastData: ForecastResponse = await forecastResponse.json();
 
-      setData({
+      // 通知父组件数据更新
+      onDataUpdate({
         history: forecastData.history,
         forecast: forecastData.forecast,
       });
@@ -155,7 +166,7 @@ const EnergyChart: React.FC = () => {
         value: 9 + Math.random() * 2,
         timestamp: new Date(Date.now() + (i + 1) * 3600000).toISOString(),
       }));
-      setData({ history: mockHistory, forecast: mockForecast });
+      onDataUpdate({ history: mockHistory, forecast: mockForecast });
     } finally {
       setLoading(false);
     }
@@ -169,7 +180,7 @@ const EnergyChart: React.FC = () => {
   }, []);
 
   // Show loading state
-  if (loading && data.history.length === 0) {
+  if (loading && energyData.history.length === 0) {
     return (
       <Card
         initial={{ opacity: 0, y: 20 }}
@@ -182,7 +193,7 @@ const EnergyChart: React.FC = () => {
   }
 
   // Show error state
-  if (error && data.history.length === 0) {
+  if (error && energyData.history.length === 0) {
     return (
       <Card
         initial={{ opacity: 0, y: 20 }}
@@ -196,11 +207,11 @@ const EnergyChart: React.FC = () => {
   }
 
   const chartData = {
-    labels: [...data.history, ...data.forecast].map(d => formatTime(d.timestamp)),
+    labels: [...energyData.history, ...energyData.forecast].map(d => formatTime(d.timestamp)),
     datasets: [
       {
         label: 'Historical Data',
-        data: data.history.map(d => d.value),
+        data: energyData.history.map(d => d.value),
         borderColor: '#e056fd',
         backgroundColor: 'rgba(224, 86, 253, 0.1)',
         fill: true,
@@ -209,9 +220,9 @@ const EnergyChart: React.FC = () => {
       {
         label: 'Forecast Data',
         data: [
-          ...Array(data.history.length - 1).fill(null), 
-          ...(data.history.length > 0 ? [data.history[data.history.length - 1].value] : []),
-          ...data.forecast.map(d => d.value)
+          ...Array(energyData.history.length - 1).fill(null), 
+          ...(energyData.history.length > 0 ? [energyData.history[energyData.history.length - 1].value] : []),
+          ...energyData.forecast.map(d => d.value)
         ],
         borderColor: '#2ed573',
         backgroundColor: 'rgba(46, 213, 115, 0.1)',
@@ -255,8 +266,8 @@ const EnergyChart: React.FC = () => {
     },
   };
 
-  const currentValue = data.history[data.history.length - 1]?.value || 0;
-  const predictedValue = data.forecast[data.forecast.length - 1]?.value || 0;
+  const currentValue = energyData.history[energyData.history.length - 1]?.value || 0;
+  const predictedValue = energyData.forecast[energyData.forecast.length - 1]?.value || 0;
 
   return (
     <Card
