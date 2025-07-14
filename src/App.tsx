@@ -4,7 +4,7 @@ import DeviceCard from './components/DeviceCard/DeviceCard';
 import EnvironmentCard from './components/EnvironmentCard/EnvironmentCard';
 import EnergyChart from './components/EnergyChart/EnergyChart';
 import GlobalStyles from './styles/GlobalStyles';
-import { DeviceType, EnvironmentData, EnergyUsageData } from './types';
+import { DeviceType, EnvironmentData } from './types';
 
 const initialDevices: DeviceType[] = [
   {
@@ -45,24 +45,8 @@ const environmentData: EnvironmentData = {
   temperature: 24,
 };
 
-const generateEnergyData = (): EnergyUsageData[] => {
-  const data: EnergyUsageData[] = [];
-  const times = ['04:30PM', '05:00PM', '05:30PM', '06:00PM', '06:30PM', '07:00PM', '07:30PM', '08:00PM', '08:30PM'];
-  
-  times.forEach((time, index) => {
-    data.push({
-      timestamp: time,
-      usage: 70 + Math.random() * 30,
-      efficiency: 20 + Math.random() * 30,
-    });
-  });
-  
-  return data;
-};
-
 function App() {
   const [devices, setDevices] = useState<DeviceType[]>(initialDevices);
-  const energyData = generateEnergyData();
 
   const handleDeviceToggle = (deviceId: string, isOn: boolean) => {
     setDevices(prevDevices =>
@@ -84,7 +68,7 @@ function App() {
           />
         ))}
         <EnvironmentCard data={environmentData} />
-        <EnergyChart data={energyData} />
+        <EnergyChart />
       </Dashboard>
     </>
   );

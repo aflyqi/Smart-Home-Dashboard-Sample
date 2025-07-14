@@ -12,8 +12,21 @@ export interface EnvironmentData {
   temperature: number;
 }
 
-export interface EnergyUsageData {
+export interface TimeSeriesData {
+  value: number;
   timestamp: string;
-  usage: number;
-  efficiency: number;
+}
+
+export interface HistoryResponse {
+  history: TimeSeriesData[];
+}
+
+export interface ForecastResponse {
+  history: TimeSeriesData[];
+  forecast: TimeSeriesData[];
+}
+
+export interface EnergyUsageData {
+  history: TimeSeriesData[];
+  forecast: TimeSeriesData[];
 } 

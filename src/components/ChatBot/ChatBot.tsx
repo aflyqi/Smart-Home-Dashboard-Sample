@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { IconButton, TextField } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SendIcon from '@mui/icons-material/Send';
+import { TimeSeriesData, HistoryResponse, ForecastResponse } from '../../types';
 
 const Drawer = styled(motion.div)`
   position: fixed;
@@ -142,18 +143,56 @@ interface ChatBotProps {
 const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose }) => {
   const [messages, setMessages] = useState<string[]>([]);
   const [input, setInput] = useState('');
+  const [currentData, setCurrentData] = useState<{ history: TimeSeriesData[], forecast: TimeSeriesData[] }>({
+    history: [],
+    forecast: []
+  });
 
-  const generateRandomData = () => {
-    const history = Array.from({ length: 7 }, () => (10 + Math.random()).toFixed(1));
-    const forecast = Array.from({ length: 3 }, () => (10 + Math.random()).toFixed(1));
-    return { history, forecast };
+  const fetchData = async () => {
+    try {
+      // 获取历史数据
+      const historyResponse = await fetch('http://127.0.0.1:8000/history');
+      const historyData: HistoryResponse = await historyResponse.json();
+
+      // 获取预测数据
+      const forecastResponse = await fetch('http://127.0.0.1:8000/predict', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ history: historyData.history }),
+      });
+      const forecastData: ForecastResponse = await forecastResponse.json();
+
+      setCurrentData({
+        history: forecastData.history,
+        forecast: forecastData.forecast,
+      });
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      // 使用模拟数据
+      const mockHistory: TimeSeriesData[] = Array.from({ length: 7 }, (_, i) => ({
+        value: 9 + Math.random() * 2,
+        timestamp: new Date(Date.now() - (6 - i) * 3600000).toISOString(),
+      }));
+      const mockForecast: TimeSeriesData[] = Array.from({ length: 3 }, (_, i) => ({
+        value: 9 + Math.random() * 2,
+        timestamp: new Date(Date.now() + (i + 1) * 3600000).toISOString(),
+      }));
+      setCurrentData({ history: mockHistory, forecast: mockForecast });
+    }
   };
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchData();
+    }
+  }, [isOpen]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
 
     const userMessage = input.trim();
-    const data = generateRandomData();
     
     try {
       const response = await fetch('http://127.0.0.1:8000/mock', {
@@ -162,9 +201,9 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          history: data.history,
-          forecast: data.forecast,
-          context: userMessage // 添加用户输入的内容作为context
+          history: currentData.history,
+          forecast: currentData.forecast,
+          context: userMessage
         }),
       });
 
