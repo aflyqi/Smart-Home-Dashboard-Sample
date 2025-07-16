@@ -3,6 +3,8 @@ import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { IconButton } from '@mui/material';
 import ChatIcon from '@mui/icons-material/Chat';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { useNavigate } from 'react-router-dom';
 
 const DashboardContainer = styled.div`
   max-width: 1400px;
@@ -32,7 +34,7 @@ const HeaderRight = styled.div`
   gap: 15px;
 `;
 
-const ChatButton = styled(IconButton)`
+const ActionButton = styled(IconButton)`
   &.MuiIconButton-root {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
@@ -61,6 +63,22 @@ const RoomTabs = styled.div`
   backdrop-filter: blur(10px);
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+  }
 `;
 
 const RoomTab = styled(motion.button)<{ active?: boolean }>`
@@ -73,6 +91,7 @@ const RoomTab = styled(motion.button)<{ active?: boolean }>`
   font-size: 16px;
   transition: all 0.3s ease;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
 
   &:hover {
     background: rgba(255, 255, 255, 0.25);
@@ -91,17 +110,27 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ children, onChatToggle }) => {
+  const navigate = useNavigate();
   const rooms = ['Living Room', 'Kitchen', 'Bedroom', 'Office'];
   const [activeRoom, setActiveRoom] = React.useState('Living Room');
+
+  const handleLogout = () => {
+    localStorage.clear();
+    window.dispatchEvent(new Event('storage'));
+    navigate('/login', { replace: true });
+  };
 
   return (
     <DashboardContainer>
       <Header>
         <h1>Smart Home</h1>
         <HeaderRight>
-          <ChatButton onClick={() => onChatToggle(true)}>
+          <ActionButton onClick={() => onChatToggle(true)}>
             <ChatIcon />
-          </ChatButton>
+          </ActionButton>
+          <ActionButton onClick={handleLogout}>
+            <LogoutIcon />
+          </ActionButton>
         </HeaderRight>
       </Header>
       

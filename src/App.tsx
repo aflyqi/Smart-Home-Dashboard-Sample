@@ -1,4 +1,7 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, Suspense, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { CssBaseline, CircularProgress } from '@mui/material';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 import Dashboard from './components/Layout/Dashboard';
 import DeviceCard from './components/DeviceCard/DeviceCard';
 import EnvironmentCard from './components/EnvironmentCard/EnvironmentCard';
@@ -6,6 +9,8 @@ import EnergyChart from './components/EnergyChart/EnergyChart';
 import GlobalStyles from './styles/GlobalStyles';
 import { DeviceType, EnvironmentData, TimeSeriesData } from './types';
 import ChatBot from './components/ChatBot/ChatBot';
+import Login from './components/Auth/Login';
+import Register from './components/Auth/Register';
 
 const initialDevices: DeviceType[] = [
   {
@@ -46,6 +51,29 @@ const environmentData: EnvironmentData = {
   temperature: 24,
 };
 
+// 创建暗色主题
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+    background: {
+      default: 'transparent',
+      paper: 'rgba(255, 255, 255, 0.1)',
+    },
+  },
+});
+
+// 加载指示器组件
+const LoadingSpinner = () => (
+  <div style={{
+    position: 'fixed',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+  }}>
+    <CircularProgress />
+  </div>
+);
+
 function App() {
   const [devices, setDevices] = useState<DeviceType[]>(initialDevices);
   const [energyData, setEnergyData] = useState<{
@@ -53,25 +81,29 @@ function App() {
     forecast: TimeSeriesData[];
   }>({ history: [], forecast: [] });
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // 计算当前开启设备的总能耗
-  const calculateTotalPowerUsage = useCallback((deviceList: DeviceType[]): number => {
-    return deviceList
-      .filter(device => device.isOn)
-      .reduce((total, device) => total + device.powerUsage, 0);
+  // 监听登录状态变化
+  useEffect(() => {
+    const checkLoginStatus = () => {
+      const loginStatus = localStorage.getItem('isLoggedIn') === 'true';
+      setIsLoggedIn(loginStatus);
+    };
+
+    // 初始检查
+    checkLoginStatus();
+
+    // 监听storage变化
+    window.addEventListener('storage', checkLoginStatus);
+    window.addEventListener('login-status-change', checkLoginStatus);
+
+    return () => {
+      window.removeEventListener('storage', checkLoginStatus);
+      window.removeEventListener('login-status-change', checkLoginStatus);
+    };
   }, []);
 
-  // 更新预测数据
-  const updateForecastWithDevices = useCallback((
-    currentForecast: TimeSeriesData[],
-    additionalPower: number
-  ): TimeSeriesData[] => {
-    return currentForecast.map(point => ({
-      ...point,
-      value: point.value + additionalPower
-    }));
-  }, []);
-
+  // 处理设备状态更新
   const handleDeviceToggle = useCallback((deviceId: string, isOn: boolean) => {
     setDevices(prevDevices => {
       const newDevices = prevDevices.map(device =>
@@ -86,33 +118,35 @@ function App() {
         // 更新预测数据
         setEnergyData(prevData => ({
           ...prevData,
-          forecast: updateForecastWithDevices(prevData.forecast, powerChange)
+          forecast: prevData.forecast.map(point => ({
+            ...point,
+            value: point.value + powerChange
+          }))
         }));
       }
       
       return newDevices;
     });
-  }, [updateForecastWithDevices]);
+  }, []);
 
   // 处理能源数据更新
   const handleEnergyDataUpdate = useCallback((newData: {
     history: TimeSeriesData[];
     forecast: TimeSeriesData[];
   }) => {
-    // 计算当前设备的总能耗
-    const totalPowerUsage = calculateTotalPowerUsage(devices);
-    
-    // 更新预测数据，加入当前开启设备的能耗
-    const updatedForecast = updateForecastWithDevices(newData.forecast, totalPowerUsage);
-    
-    setEnergyData({
-      history: newData.history,
-      forecast: updatedForecast
+    setEnergyData(prevEnergyData => {
+      return {
+        history: newData.history,
+        forecast: newData.forecast.map(point => ({
+          ...point,
+          value: point.value
+        }))
+      };
     });
-  }, [devices, calculateTotalPowerUsage, updateForecastWithDevices]);
+  }, []);
 
-  return (
-    <>
+  const MainContent = () => (
+    <Suspense fallback={<LoadingSpinner />}>
       <GlobalStyles />
       <Dashboard onChatToggle={setIsChatOpen}>
         {devices.map(device => (
@@ -133,7 +167,29 @@ function App() {
         onClose={() => setIsChatOpen(false)}
         energyData={energyData}
       />
-    </>
+    </Suspense>
+  );
+
+  return (
+    <ThemeProvider theme={darkTheme}>
+      <CssBaseline />
+      <Router>
+        <Routes>
+          <Route
+            path="/"
+            element={isLoggedIn ? <MainContent /> : <Navigate to="/login" replace />}
+          />
+          <Route
+            path="/login"
+            element={!isLoggedIn ? <Login /> : <Navigate to="/" replace />}
+          />
+          <Route
+            path="/register"
+            element={!isLoggedIn ? <Register /> : <Navigate to="/" replace />}
+          />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 }
 
